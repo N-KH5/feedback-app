@@ -18,15 +18,54 @@ const app = express();
 // Connect to MongoDB
 connectDB();
 
-// CORS
-app.use(
-  cors({
-    origin:
-      process.env.CLIENT_URL ||
-      "http://localhost:5173",
-    credentials: true,
-  })
-);
+// CORS configuration
+const allowedOrigins = [
+  "http://localhost:5173",
+  process.env.CLIENT_URL,
+].filter(Boolean);
+
+const corsOptions = {
+  origin(origin, callback) {
+    // Allow requests without an Origin header,
+    // for example Render health checks or Postman.
+    if (!origin) {
+      return callback(null, true);
+    }
+
+    if (allowedOrigins.includes(origin)) {
+      return callback(null, true);
+    }
+
+    return callback(
+      new Error(
+        `Origin not allowed by CORS: ${origin}`
+      )
+    );
+  },
+
+  credentials: true,
+
+  methods: [
+    "GET",
+    "POST",
+    "PUT",
+    "PATCH",
+    "DELETE",
+    "OPTIONS",
+  ],
+
+  allowedHeaders: [
+    "Content-Type",
+    "Authorization",
+  ],
+
+  optionsSuccessStatus: 204,
+};
+
+app.use(cors(corsOptions));
+
+// Explicitly handle browser preflight requests
+app.options(/.*/, cors(corsOptions));
 
 // Body parsers
 app.use(express.json());
@@ -57,10 +96,12 @@ app.get("/", (req, res) => {
 app.use("/api/auth", authRoutes);
 app.use("/api/admin", adminRoutes);
 app.use("/api/modules", moduleRoutes);
+
 app.use(
   "/api/sessions",
   feedbackSessionRoutes
 );
+
 app.use("/api/feedback", feedbackRoutes);
 
 // Route not found
@@ -101,6 +142,17 @@ app.use((error, req, res, next) => {
     });
   }
 
+  if (
+    error.message?.startsWith(
+      "Origin not allowed by CORS:"
+    )
+  ) {
+    return res.status(403).json({
+      success: false,
+      message: error.message,
+    });
+  }
+
   return res
     .status(error.status || 500)
     .json({
@@ -116,11 +168,15 @@ const PORT =
 
 const startServer = async () => {
   try {
-    app.listen(PORT, "0.0.0.0", () => {
-      console.log(
-        `Server is running on http://localhost:${PORT}`
-      );
-    });
+    app.listen(
+      PORT,
+      "0.0.0.0",
+      () => {
+        console.log(
+          `Server is running on http://localhost:${PORT}`
+        );
+      }
+    );
   } catch (error) {
     console.error(
       "Server failed to start:",
