@@ -1,0 +1,16 @@
+{
+  "name": "feedback-app",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Full-stack learning feedback application",
+  "scripts": {
+    "client": "npm run dev --prefix client",
+    "server": "npm run dev --prefix server",
+    "dev": "concurrently -n SERVER,CLIENT \"npm run server\" \"npm run client\"",
+    "start": "npm run start --prefix server",
+    "create-admin": "npm run create-admin --prefix server"
+  },
+  "devDependencies": {
+    "concurrently": "^10.0.4"
+  }
+}
