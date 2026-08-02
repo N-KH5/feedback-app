@@ -32,14 +32,18 @@ const corsOptions = {
       return callback(null, true);
     }
 
-    if (allowedOrigins.includes(origin)) {
+    const isExplicitlyAllowed = allowedOrigins.includes(origin);
+
+    // Allow Vercel production and preview deployment domains
+    const isVercelDomain =
+      /^https:\/\/[a-zA-Z0-9-]+\.vercel\.app$/.test(origin);
+
+    if (isExplicitlyAllowed || isVercelDomain) {
       return callback(null, true);
     }
 
     return callback(
-      new Error(
-        `Origin not allowed by CORS: ${origin}`
-      )
+      new Error(`Origin not allowed by CORS: ${origin}`)
     );
   },
 
@@ -79,9 +83,7 @@ app.use(
 // Make uploaded PDFs and images publicly accessible
 app.use(
   "/uploads",
-  express.static(
-    path.join(__dirname, "uploads")
-  )
+  express.static(path.join(__dirname, "uploads"))
 );
 
 // Test route
@@ -96,12 +98,7 @@ app.get("/", (req, res) => {
 app.use("/api/auth", authRoutes);
 app.use("/api/admin", adminRoutes);
 app.use("/api/modules", moduleRoutes);
-
-app.use(
-  "/api/sessions",
-  feedbackSessionRoutes
-);
-
+app.use("/api/sessions", feedbackSessionRoutes);
 app.use("/api/feedback", feedbackRoutes);
 
 // Route not found
@@ -114,31 +111,19 @@ app.use((req, res) => {
 
 // Global error handler
 app.use((error, req, res, next) => {
-  console.error(
-    "Global server error:",
-    error
-  );
+  console.error("Global server error:", error);
 
-  if (
-    error.code ===
-    "LIMIT_FILE_SIZE"
-  ) {
+  if (error.code === "LIMIT_FILE_SIZE") {
     return res.status(400).json({
       success: false,
-      message:
-        "The uploaded file is larger than 10 MB",
+      message: "The uploaded file is larger than 10 MB",
     });
   }
 
-  if (
-    error.name ===
-    "MulterError"
-  ) {
+  if (error.name === "MulterError") {
     return res.status(400).json({
       success: false,
-      message:
-        error.message ||
-        "File upload failed",
+      message: error.message || "File upload failed",
     });
   }
 
@@ -153,30 +138,22 @@ app.use((error, req, res, next) => {
     });
   }
 
-  return res
-    .status(error.status || 500)
-    .json({
-      success: false,
-      message:
-        error.message ||
-        "Internal server error",
-    });
+  return res.status(error.status || 500).json({
+    success: false,
+    message:
+      error.message || "Internal server error",
+  });
 });
 
-const PORT =
-  process.env.PORT || 5000;
+const PORT = process.env.PORT || 5000;
 
 const startServer = async () => {
   try {
-    app.listen(
-      PORT,
-      "0.0.0.0",
-      () => {
-        console.log(
-          `Server is running on http://localhost:${PORT}`
-        );
-      }
-    );
+    app.listen(PORT, "0.0.0.0", () => {
+      console.log(
+        `Server is running on http://localhost:${PORT}`
+      );
+    });
   } catch (error) {
     console.error(
       "Server failed to start:",
