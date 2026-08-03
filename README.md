@@ -31,7 +31,6 @@ Das System besteht aus drei Benutzerrollen:
 ### Teilnehmer
 
 - Teilnahme per Sitzungscode oder QR-Code
-- Anonymes Feedback
 - Deutsche und englische Oberfläche
 
 ---
